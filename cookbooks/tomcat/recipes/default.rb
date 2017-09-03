@@ -9,12 +9,14 @@ end
 directory "/usr/share/tomcat/webapps/intuit" do
   mode 0755
   owner 'root'
-  group 'root'
+  group 'tomcat'
   action :create
 end
 
 file '/usr/share/tomcat/webapps/intuit/index.html' do
-  content 'Hello Intuit'
+  content 'Hello Intutit'
+  owner 'root'
+  group 'tomcat'
 end
 
 
