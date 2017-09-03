@@ -1,3 +1,11 @@
+file '/etc/yum.repos.d/nginx.repo' do
+	content '[nginx]
+name=nginx repo
+baseurl=http://nginx.org/packages/centos/6/$basearch/
+gpgcheck=0
+enabled=1'
+end
+
 package "nginx.x86_64" do
       action :install
 end
