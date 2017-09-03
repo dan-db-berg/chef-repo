@@ -14,7 +14,7 @@ directory "/usr/share/tomcat/webapps/intuit" do
 end
 
 file '/usr/share/tomcat/webapps/intuit/index.html' do
-  content 'Hello Intutit'
+  content 'Hello Intuit'
 end
 
 
