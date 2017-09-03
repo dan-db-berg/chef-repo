@@ -1,17 +1,5 @@
-file '/etc/yum.repos.d/nginx.repo' do
-	content '[nginx]
-name=nginx repo
-baseurl=http://nginx.org/packages/centos/6/$basearch/
-gpgcheck=0
-enabled=1'
-end
-
 package "nginx.x86_64" do
       action :install
-end
-
-service "nginx" do
-  action [:enable, :start]
 end
 
 file '/etc/nginx/conf.d/default.conf' do
@@ -50,5 +38,5 @@ bash "certificates_copy" do
 end
 
 service "nginx" do
-  action :restart
+  action [:enable, :start]
 end

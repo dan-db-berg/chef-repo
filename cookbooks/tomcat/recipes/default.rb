@@ -1,44 +1,45 @@
-package "tomcat.noarch" do
-      action :install
+remote_file "/tmp/apache-tomcat-7.0.67.zip" do
+	source "http://archive.apache.org/dist/tomcat/tomcat-7/v7.0.67/bin/apache-tomcat-7.0.67.zip"
 end
 
-file '/etc/tomcat/server.xml' do
-  action :delete
+bash "unpack_tomcat" do
+	code <<-EOL
+	unzip /tmp/apache-tomcat-7.0.67.zip -d /opt/
+	mv /opt/apache-tomcat-7.0.67 /opt/tomcat/
+	chown -R tomcat:tomcat /opt/tomcat/
+	chmod 0755 /opt/tomcat/bin/*.sh
+	EOL
 end
 
-file '/etc/tomcat/server.xml' do
-content '<!-- Tomcat listen on 8080 -->
-<Connector port="8080" protocol="HTTP/1.1"
-     connectionTimeout="20000"
-     URIEncoding="UTF-8"
-     redirectPort="8443" />
-
-
-  <!-- Set /intuit as default path -->
-  <Host name="localhost"  appBase="webapps"
-       unpackWARs="true" autoDeploy="true">
-
-         <Context path="" docBase="intuit">
-             <!-- Default set of monitored resources -->
-             <WatchedResource>WEB-INF/web.xml</WatchedResource>
-         </Context>
-
-  </Host>'
+user 'tomcat' do
+  manage_home true
+  home '/home/tomcat'
+  shell '/bin/bash'
 end
 
-directory "/usr/share/tomcat/webapps/intuit" do
+template "tomcat" do
+  path "/etc/init.d/tomcat"
+  source "tomcat.erb"
+  owner "root"
+  group "root"
+  mode "0755"
+end
+
+service "tomcat" do
+    supports :restart => true, :start => true, :stop => true, :reload => true
+    action [ :enable, :start ]
+    subscribes :restart, "template[tomcat]", :immediately
+end 
+
+directory "/opt/tomcat/webapps/intuit" do
   mode 0755
-  owner 'root'
+  owner 'tomcat'
   group 'tomcat'
   action :create
 end
 
-file '/usr/share/tomcat/webapps/intuit/index.html' do
+file '/opt/tomcat/webapps/intuit/index.html' do
   content 'Hello Intutit'
-  owner 'root'
+  owner 'tomcat'
   group 'tomcat'
-end
-
-service "tomcat" do
-  action [:enable, :start]
 end
