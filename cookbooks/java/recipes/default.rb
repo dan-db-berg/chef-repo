@@ -1,5 +1,5 @@
 remote_file "/tmp/jdk-7u79-linux-x64.tar.gz" do
-        source "https://s3.amazonaws.com/my-cf-elb-logs/jdk-7u79-linux-x64.tar.gz"
+        source "https://s3.amazonaws.com/cf-soft/jdk-7u79-linux-x64.tar.gz"
 end
 
 bash "unpack_java" do
