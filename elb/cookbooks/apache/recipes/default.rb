@@ -6,28 +6,12 @@ file '/etc/httpd/conf/httpd.conf' do
   action :delete
 end
 
-template "workers.properties" do
-  path "/etc/httpd/conf/workers.properties"
-  source "workers.erb"
-  owner "root"
-  group "root"
-  mode "0755"
-end
-
-template "httpd.conf" do
-  path "/etc/httpd/conf/httpd.conf"
-  source "httpd.erb"
-  owner "root"
-  group "root"
-  mode "0755"
-end
-
-template "mod_jk.so" do
-  path "/etc/httpd/modules/mod_jk.so"
-  source "mod_jk.erb"
-  owner "root"
-  group "root"
-  mode "0755"
+bash "copy_apache_file" do
+        code <<-EOL
+	sudo cp /home/ec2-user/chef-repo/elb/cookbooks/apache/templates/http.conf /etc/httpd/conf/
+	sudo cp /home/ec2-user/chef-repo/elb/cookbooks/apache/templates/workers.properties /etc/httpd/conf/
+	sudo cp /home/ec2-user/chef-repo/elb/cookbooks/apache/templates/mod_jsk.so /etc/httpd/modules/
+        EOL
 end
 
 service "httpd" do
