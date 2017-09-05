@@ -17,7 +17,7 @@ server {
 listen  443;
 ssl on;
 
-server_name elb.msv-a.net;
+server_name sync.msv-a.net;
 root /usr/share/tomcat/webapps/intuit/;
 
   location / {
