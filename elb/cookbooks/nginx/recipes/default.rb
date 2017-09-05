@@ -15,7 +15,6 @@ file '/etc/nginx/conf.d/default.conf' do
 
 server {
 listen  443;
-ssl on;
 
 server_name sync.msv-a.net;
 root /usr/share/tomcat/webapps/intuit/;
