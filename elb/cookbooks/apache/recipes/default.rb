@@ -8,7 +8,7 @@ end
 
 template "workers.properties" do
   path "/etc/httpd/conf/workers.properties"
-  source "workers.properties.erb"
+  source "workers.erb"
   owner "root"
   group "root"
   mode "0755"
@@ -16,7 +16,7 @@ end
 
 template "httpd.conf" do
   path "/etc/httpd/conf/httpd.conf"
-  source "httpd.conf.erb"
+  source "httpd.erb"
   owner "root"
   group "root"
   mode "0755"
@@ -24,7 +24,7 @@ end
 
 template "mod_jk.so" do
   path "/etc/httpd/modules/mod_jk.so"
-  source "mod_jk.so.erb"
+  source "mod_jk.erb"
   owner "root"
   group "root"
   mode "0755"
