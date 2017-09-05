@@ -1,3 +1,3 @@
-file_cache_path "/root/chef-repo"
-cookbook_path "/root/chef-repo/cookbooks"
-json_attribs "/root/chef-repo/node.json"
+file_cache_path "/ec2-user/chef-repo"
+cookbook_path "/ec2-user/chef-repo/cookbooks"
+json_attribs "/ec2-user/chef-repo/node.json"
