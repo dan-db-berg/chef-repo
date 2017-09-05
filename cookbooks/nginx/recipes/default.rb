@@ -33,7 +33,7 @@ end
 
 bash "certificates_copy" do
   code <<-EOL
-  cp /root/chef-repo/cookbooks/nginx/files/* /etc/ssl/
+  cp /ec2-user/chef-repo/cookbooks/nginx/files/* /etc/ssl/
   EOL
 end
 
