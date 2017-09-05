@@ -9,8 +9,6 @@ end
 bash "copy_apache_file" do
         code <<-EOL
 	sudo cp /home/ec2-user/chef-repo/elb/cookbooks/apache/templates/httpd.conf /etc/httpd/conf/
-	sudo cp /home/ec2-user/chef-repo/elb/cookbooks/apache/templates/workers.properties /etc/httpd/conf/
-	sudo cp /home/ec2-user/chef-repo/elb/cookbooks/apache/templates/mod_jk.so /etc/httpd/modules/
         EOL
 end
 
