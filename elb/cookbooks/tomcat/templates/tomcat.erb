@@ -1,0 +1,46 @@
+#!/bin/sh
+# chkconfig: 345 99 1
+# description: Tomcat7 service
+# processname: java
+
+# Get LSB functions
+#. /lib/lsb/init-functions
+
+
+export JAVA_HOME=/opt/java/
+export TOMCAT_USER=tomcat
+export CATALINA_HOME=/opt/tomcat
+export CATALINA_PID=$CATALINA_HOME/bin/tomcat.pid
+
+[ -d "$CATALINA_HOME" ] || { echo "Tomcat requires $CATALINA_HOME."; exit 1; }
+
+case $1 in
+
+    start)
+        su $TOMCAT_USER bash -c "$CATALINA_HOME/bin/catalina.sh jpda $1"
+    ;;
+    stop)
+        pkill -9 java
+    ;;
+    restart)
+        pkill -9 java
+        sleep 2
+        su $TOMCAT_USER bash -c "$CATALINA_HOME/bin/catalina.sh jpda start"
+    ;;
+
+    status)
+    if [ -f "$CATALINA_PID" ]; then
+        read kpid < "$CATALINA_PID"
+        if ps --pid $kpid 2>&1 1>/dev/null; then
+            echo "$0 is already running at ${kpid}"
+        else
+            echo "$CATALINA_PID found, but $kpid is not running"
+        fi
+        unset kpid
+    else
+        echo "$0 is stopped"
+    fi
+    ;;
+
+esac
+exit 0

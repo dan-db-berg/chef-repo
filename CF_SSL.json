@@ -1,0 +1,112 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+
+  "Description" : "AWS CentOS image",
+
+  "Parameters" : {
+    "KeyName": {
+      "Description": "Public/private key pair",
+      "Type": "AWS::EC2::KeyPair::KeyName"
+    },
+    "InstanceType" : {
+      "Description" : "WebServer EC2 instance type",
+      "Type" : "String",
+      "Default" : "t1.micro",
+      "AllowedValues" : [ "t1.micro" ],
+      "ConstraintDescription" : "must be a valid EC2 instance type."
+    },
+     "HostedZone" : {
+      "Type" : "String",
+      "Description" : "The DNS name of an existing Amazon Route 53 hosted zone"
+     },
+    "WebServerPort" : {
+      "Description" : "TCP/IP port of the web server",
+      "Type" : "String",
+      "Default" : "80"
+    },
+    "SSHLocation" : {
+      "Description" : "The IP address range that can be used to SSH to the EC2 instances",
+      "Type": "String",
+      "MinLength": "9",
+      "MaxLength": "18",
+      "Default": "0.0.0.0/0",
+      "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+      "ConstraintDescription": "must be a valid IP CIDR range of the form x.x.x.x/x."
+    }
+  },
+
+  "Mappings" : {
+    "AWSInstanceType2Arch" : {
+      "t1.micro"    : { "Arch" : "64" }
+    },
+
+    "AWSRegionArch2AMI" : {
+      "us-east-1"      : { "64" : "ami-21ffc85a" }
+    }
+  },
+
+  "Resources" : {
+    "Ec2Instance" : {
+      "Type" : "AWS::EC2::Instance",
+      "Properties" : {
+        "SecurityGroups" : [ { "Ref" : "InstanceSecurityGroup" } ],
+        "KeyName" : { "Ref" : "KeyName" },
+        "InstanceType" : { "Ref" : "InstanceType" },
+        "ImageId" : { "Fn::FindInMap" : [ "AWSRegionArch2AMI", { "Ref" : "AWS::Region" },
+                                          { "Fn::FindInMap" : [ "AWSInstanceType2Arch", { "Ref" : "InstanceType" },
+                                          "Arch" ] } ] },
+        "UserData" : { "Fn::Base64" : { "Ref" : "WebServerPort" }}
+      }
+    },
+
+  "InstanceDNSRecord" : {
+      "Type" : "AWS::Route53::RecordSet",
+      "Properties" : {
+         "HostedZoneName" : { "Fn::Join" : [ "", [{ "Ref" : "HostedZone"}, "." ]]},
+         "Comment" : "DNS name for my instance.",
+         "Name" : { "Fn::Join" : [ "", ["sync", ".", {"Ref" : "HostedZone"}, "." ]]},
+         "Type" : "A",
+         "TTL" : "60",
+         "ResourceRecords" : [ { "Fn::GetAtt" : [ "Ec2Instance", "PublicIp" ] }
+         ]
+      }
+    },
+
+
+    "InstanceSecurityGroup" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "GroupDescription" : "Enable SSH access and HTTP access on the inbound port",
+        "SecurityGroupIngress" : [ {
+          "IpProtocol" : "tcp",
+          "FromPort" : "22",
+          "ToPort" : "22",
+          "CidrIp" : { "Ref" : "SSHLocation"}
+        },
+        {
+          "IpProtocol" : "tcp",
+          "FromPort" : { "Ref" : "WebServerPort" },
+          "ToPort" : { "Ref" : "WebServerPort" },
+          "CidrIp" : "0.0.0.0/0"
+        },
+        {
+          "IpProtocol" : "tcp",
+          "FromPort" : "443",
+          "ToPort" : "443",
+          "CidrIp" : "0.0.0.0/0"
+        } ],
+      }
+    }
+  },
+
+  "Outputs" : {
+  "InstanceID1" : {
+    "Description": "The Instance ID",  
+    "Value" : { "Ref" : "Ec2Instance" }
+  },
+  "Instance1PubIP" : {
+    "Description": "The Instance PubIP",
+    "Value" : { "Fn::GetAtt" : [ "Ec2Instance", "PublicIp" ]}
+  },
+ }
+}

@@ -1,0 +1,162 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+
+  "Description" : "AWS CentOS image",
+
+  "Parameters" : {
+    "KeyName": {
+      "Description": "Public/private key pair",
+      "Type": "AWS::EC2::KeyPair::KeyName"
+    },
+    "InstanceType" : {
+      "Description" : "WebServer EC2 instance type",
+      "Type" : "String",
+      "Default" : "t2.micro",
+      "AllowedValues" : [ "t2.micro" ],
+      "ConstraintDescription" : "must be a valid EC2 instance type."
+    },
+     "HostedZone" : {
+      "Type" : "String",
+      "Description" : "The DNS name of an existing Amazon Route 53 hosted zone"
+     },
+    "WebServerPort" : {
+      "Description" : "TCP/IP port of the web server",
+      "Type" : "String",
+      "Default" : "80"
+    },
+    "SSHLocation" : {
+      "Description" : "The IP address range that can be used to SSH to the EC2 instances",
+      "Type": "String",
+      "MinLength": "9",
+      "MaxLength": "18",
+      "Default": "0.0.0.0/0",
+      "AllowedPattern": "(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})",
+      "ConstraintDescription": "must be a valid IP CIDR range of the form x.x.x.x/x."
+    }
+  },
+
+  "Mappings" : {
+    "AWSInstanceType2Arch" : {
+      "t1.micro"    : { "Arch" : "64" }
+    },
+
+    "AWSRegionArch2AMI" : {
+      "us-east-1"      : { "64" : "ami-01e2a017" }
+    }
+  },
+
+  "Resources" : {
+    "ElasticLoadBalancer" : {
+      "Type" : "AWS::ElasticLoadBalancing::LoadBalancer",
+      "Properties" : {
+        "AvailabilityZones" : { "Fn::GetAZs" : "" },
+        "Instances" : [ { "Ref" : "Ec2Instance1" },{ "Ref" : "Ec2Instance2" } ],
+        "Listeners" : [ {
+          "LoadBalancerPort" : "443",
+          "InstancePort" : { "Ref" : "WebServerPort" },
+          "Protocol" : "HTTPS",
+	  "SSLCertificateId" : "arn:aws:acm:us-east-1:351020863665:certificate/94c2d4b1-8a30-405f-a568-836e2b8f2cc2"
+        } ],
+        "HealthCheck" : {
+          "Target" : { "Fn::Join" : [ "", ["HTTP:", { "Ref" : "WebServerPort" }, "/"]]},
+          "HealthyThreshold" : "3",
+          "UnhealthyThreshold" : "5",
+          "Interval" : "30",
+          "Timeout" : "5"
+	},
+	"AccessLoggingPolicy": {
+	      "S3BucketName": "my-cf-elb-logs",
+	      "S3BucketPrefix": "Logs",
+	      "Enabled": "true",
+	      "EmitInterval" : "60"
+	    }
+	}
+   },
+
+     "ElasticLoadBalancerDNSRecord" : {
+      "Type" : "AWS::Route53::RecordSet",
+      "Properties" : {
+        "HostedZoneName" : { "Fn::Join" : [ "", [{"Ref" : "HostedZone"}, "." ]]},
+        "Comment" : "DNS name for my ELB.",
+        "Name" : { "Fn::Join" : [ "", ["app", ".", {"Ref" : "HostedZone"}, "." ]]},
+        "Type" : "CNAME",
+        "TTL" : "60",
+        "ResourceRecords" : [ { "Fn::GetAtt" : [ "ElasticLoadBalancer", "DNSName" ] } ]
+      }
+    },
+
+    "Ec2Instance1" : {
+      "Type" : "AWS::EC2::Instance",
+      "Properties" : {
+        "SecurityGroups" : [ { "Ref" : "InstanceSecurityGroup" } ],
+        "KeyName" : { "Ref" : "KeyName" },
+        "InstanceType" : { "Ref" : "InstanceType" },
+        "ImageId" : { "Fn::FindInMap" : [ "AWSRegionArch2AMI", { "Ref" : "AWS::Region" },
+                                          { "Fn::FindInMap" : [ "AWSInstanceType2Arch", { "Ref" : "InstanceType" },
+                                          "Arch" ] } ] },
+        "UserData" : { "Fn::Base64" : { "Ref" : "WebServerPort" }}
+      }
+    },
+
+    "Ec2Instance2" : {
+      "Type" : "AWS::EC2::Instance",
+      "Properties" : {
+        "SecurityGroups" : [ { "Ref" : "InstanceSecurityGroup" } ],
+        "KeyName" : { "Ref" : "KeyName" },
+        "InstanceType" : { "Ref" : "InstanceType" },
+        "ImageId" : { "Fn::FindInMap" : [ "AWSRegionArch2AMI", { "Ref" : "AWS::Region" },
+                                          { "Fn::FindInMap" : [ "AWSInstanceType2Arch", { "Ref" : "InstanceType" },
+                                          "Arch" ] } ] },
+        "UserData" : { "Fn::Base64" : { "Ref" : "WebServerPort" }}
+      }
+    },
+
+    "InstanceSecurityGroup" : {
+      "Type" : "AWS::EC2::SecurityGroup",
+      "Properties" : {
+        "GroupDescription" : "Enable SSH access and HTTP access on the inbound port",
+        "SecurityGroupIngress" : [ {
+          "IpProtocol" : "tcp",
+          "FromPort" : "22",
+          "ToPort" : "22",
+          "CidrIp" : { "Ref" : "SSHLocation"}
+        },
+        {
+          "IpProtocol" : "tcp",
+          "FromPort" : "443",
+          "ToPort" : "443",
+	  "CidrIp" : "0.0.0.0/0"
+        },
+        {
+          "IpProtocol" : "tcp",
+          "FromPort" : { "Ref" : "WebServerPort" },
+          "ToPort" : { "Ref" : "WebServerPort" },
+          "CidrIp" : "0.0.0.0/0"
+        } ]
+      }
+    }
+  },
+
+  "Outputs" : {
+  "LoadBalancerDNSName" : {
+    "Description": "The DNSName of the backup load balancer",  
+    "Value" : { "Fn::GetAtt" : [ "ElasticLoadBalancer", "DNSName" ]}
+  },
+  "InstanceID1" : {
+    "Description": "The Instance1 ID",  
+    "Value" : { "Ref" : "Ec2Instance1" }
+  },
+  "InstanceID2" : {
+    "Description": "The Instance2 ID",
+    "Value" : { "Ref" : "Ec2Instance2" }
+  },
+  "Instance1PubIP" : {
+    "Description": "The Instance1 PubIP",
+    "Value" : { "Fn::GetAtt" : [ "Ec2Instance1", "PublicIp" ]}
+  },
+  "Instance2PubIP" : {
+    "Description": "The Instance1 PubIP",
+    "Value" : { "Fn::GetAtt" : [ "Ec2Instance2", "PublicIp" ]}
+  }
+ }
+}
