@@ -18,6 +18,8 @@ listen  443;
 ssl on;
 ssl_certificate_key /etc/ssl/sync.msv-a.net.key;
 ssl_certificate /etc/ssl/chain.crt;
+ssl_session_cache shared:SSL:20m;
+ssl_session_timeout 10m;
 
 server_name sync.msv-a.net;
 root /usr/share/tomcat/webapps/intuit/;
